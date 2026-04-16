@@ -1,5 +1,5 @@
 # RiskFlow-RL
-Learning Risk and Opportunity-Aware Policies for Social-friendly Autonomous Driving via Continuous Field Propagation
+Learning Optimal Policies for Social-friendly Autonomous Driving via Continuous Field Propagation
 
 ### proposed framework:
 ![Methodology graph](assests/RiskFlow-RL.png)
