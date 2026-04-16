@@ -1,5 +1,5 @@
 # RiskFlow-RL
-Learning Optimal Policies for Social-friendly Autonomous Driving via Continuous Field Propagation
+Physics-Informed Field Propagation and Reinforcement Learning for Socially Compatible Autonomous Driving
 
 ### proposed framework:
 ![Methodology graph](assests/RiskFlow-RL.png)
