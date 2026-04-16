@@ -1,5 +1,5 @@
 # RiskFlow-RL
-RiskFlow-RL: Physics-Informed Risk Field Learning and Safe Reinforcement Learning for Autonomous Driving
+RiskFlow-RL: Learning Risk and Opportunity-Aware Policies for Social-friendly Autonomous Driving via Continuous Field Propagation
 
 ### proposed framework:
 ![Methodology graph](assests/RiskFlow-RL.png)
