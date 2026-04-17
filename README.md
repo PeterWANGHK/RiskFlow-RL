@@ -9,7 +9,7 @@ Physics-Informed Field Propagation and Reinforcement Learning for Socially Compa
 ```
 python pinn_risk_field.py --dataset inD --recording all --epochs 3000 --q_smooth --w_data 1.0 --w_phys 0.5 --w_ic 0.2 --w_bc 0.2 --w_smooth 0.3 --n_data 4096 --n_colloc 4096 --pts_per_snap 400 --save_model pinn_inD_all.pt
 ```
-### RL training (PPO only)
+### RL training and evaluation in heterogeneous traffic (PPO only)
 ```
 # 1. Extract ALL recordings into one dataset
 python -m rl.data.historical_extractor --data-dir data/exiD --recordings all --out-path rl/checkpoints/bc_dataset_full.npz --horizon-sec 1.5
