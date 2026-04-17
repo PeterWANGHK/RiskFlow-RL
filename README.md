@@ -20,6 +20,11 @@ python -m rl.train_bc --dataset rl/checkpoints/bc_dataset_full.npz --out rl/chec
 # 3. PPO fine-tune (with the new opportunity-aware reward)
 python -m rl.train_decision_ppo --bc-checkpoint rl/checkpoints/decision_policy_bc.pt --out rl/checkpoints/decision_policy_ppo.pt --total-steps 200000
 
-# 4. Evaluate
+# 4. Evaluate (on both pure car traffic or heterogeneous traffic)
+# in heterogenous traffic with truck-trailer occlusion and merging
 python highway_test.py --models RL-PPO IDEAM DREAM --rl-decision-checkpoint rl/checkpoints/decision_policy_ppo.pt --steps 250
+
+# in pure car traffic
+python highway_test.py --scenario-mode purecar --ego-start-lane center --rl-policy-mode decision --rl-decision-checkpoint rl/checkpoints/decision_policy_ppo.pt --models all --mode single
+
 ```
