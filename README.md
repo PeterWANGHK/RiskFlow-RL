@@ -10,6 +10,9 @@ Physics-Informed Field Propagation and Reinforcement Learning for Socially Compa
 ```
 python pinn_risk_field.py --dataset inD --recording all --epochs 3000 --q_smooth --w_data 1.0 --w_phys 0.5 --w_ic 0.2 --w_bc 0.2 --w_smooth 0.3 --n_data 4096 --n_colloc 4096 --pts_per_snap 400 --save_model pinn_inD_all.pt
 ```
+### demonstrations of the numerically solved risk field and PINN generated risk field:
+![PINN_examples](assests/RiskFlow-RL.png)
+
 ### RL training and evaluation in heterogeneous traffic (PPO only)
 ```
 # 1. Extract ALL recordings into one dataset
@@ -24,7 +27,6 @@ python -m rl.train_decision_ppo --bc-checkpoint rl/checkpoints/decision_policy_b
 # 4. Evaluate (on both pure car traffic or heterogeneous traffic)
 # in heterogenous traffic with truck-trailer occlusion and merging
 python highway_test.py --models RL-PPO IDEAM DREAM --rl-decision-checkpoint rl/checkpoints/decision_policy_ppo.pt --steps 250
-
 # in pure car traffic
 python highway_test.py --scenario-mode purecar --ego-start-lane center --rl-policy-mode decision --rl-decision-checkpoint rl/checkpoints/decision_policy_ppo.pt --models all --mode single
 
