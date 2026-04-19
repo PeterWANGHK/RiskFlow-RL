@@ -29,5 +29,7 @@ python -m rl.train_decision_ppo --bc-checkpoint rl/checkpoints/decision_policy_b
 python highway_test.py --models RL-PPO IDEAM DREAM --rl-decision-checkpoint rl/checkpoints/decision_policy_ppo.pt --steps 250
 # in pure car traffic
 python highway_test.py --scenario-mode purecar --ego-start-lane center --rl-policy-mode decision --rl-decision-checkpoint rl/checkpoints/decision_policy_ppo.pt --models all --mode single
+# in suddent merging scenario: (compare against baseline MPC-CBF)
+python uncertainty_merger_DREAM.py --models "RL-PPO" "IDEAM" --steps 100 --rl-policy-mode ppo --rl-checkpoint rl/checkpoints/ppo_best.pt --save-dir figsave_merger_rl_vs_ideam --save-frames false
 
 ```
