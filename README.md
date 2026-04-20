@@ -33,7 +33,7 @@ python highway_test.py --scenario-mode purecar --ego-start-lane center --rl-poli
 python uncertainty_merger_DREAM.py --models "RL-PPO" "IDEAM" --steps 100 --rl-policy-mode ppo --rl-checkpoint rl/checkpoints/ppo_best.pt --save-dir figsave_merger_rl_vs_ideam --save-frames false
 
 ```
-## Datasets download:
+## Datasets used in this project (download links):
 [Ubiquitous Traffic Eyes](http://www.seutraffic.com/#/download)
 
 [leveLXData](https://levelxdata.com/)
