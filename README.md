@@ -13,6 +13,13 @@ python pinn_risk_field.py --dataset inD --recording all --epochs 3000 --q_smooth
 ### demonstrations of the numerically solved risk field and PINN generated risk field:
 ![PINN_examples](assests/DRIFT_PINN_1.gif)
 
+### Dataset processing
+```
+# Load the recorded trajectories:
+python run_track_visualization.py --dataset [name of the dataset (e.g., highD; SQM-N-4)] --recording 00
+# Example: load the behaviors from the SQM-N-4 dataset and store into .npz file 
+python -m rl.data.historical_extractor --dataset SQM-N-4 --data-dir data/SQM-N-4   --out-path rl/checkpoints/bc_sqm_v3.npz
+```
 ### RL training and evaluation in heterogeneous traffic (PPO only)
 ```
 # 1. Extract ALL recordings into one dataset
