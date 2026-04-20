@@ -1,7 +1,6 @@
 # RiskFlow-RL
 Physics-Informed Field Propagation and Reinforcement Learning for Socially Compatible Autonomous Driving
 
-### (This repo is an iterim supplementary material for the HKU DATA8007 course project submission)
 ### proposed framework:
 ![Methodology graph](assests/RiskFlow-RL.png)
 
