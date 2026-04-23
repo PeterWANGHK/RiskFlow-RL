@@ -1,5 +1,5 @@
 # RiskFlow-RL
-Physics-Informed Field Propagation and Reinforcement Learning for Socially Compatible Autonomous Driving
+Physics-Informed Field Propagation and Reinforcement Learning for Socially-Aware Autonomous Driving
 
 ### proposed framework:
 ![Methodology graph](assests/RiskFlow-RL.png)
