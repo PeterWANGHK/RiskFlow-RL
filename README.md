@@ -36,9 +36,48 @@ python highway_test.py --models RL-PPO IDEAM DREAM --rl-decision-checkpoint rl/c
 # in pure car traffic
 python highway_test.py --scenario-mode purecar --ego-start-lane center --rl-policy-mode decision --rl-decision-checkpoint rl/checkpoints/decision_policy_ppo.pt --models all --mode single
 # in suddent merging scenario: (compare against baseline MPC-CBF)
-python uncertainty_merger_DREAM.py --models "RL-PPO" "IDEAM" --steps 100 --rl-policy-mode ppo --rl-checkpoint rl/checkpoints/ppo_best.pt --save-dir figsave_merger_rl_vs_ideam --save-frames false
+python uncertainty_merger.py --models "RL-PPO" "IDEAM" --steps 100 --rl-policy-mode ppo --rl-checkpoint rl/checkpoints/ppo_best.pt --save-dir figsave_merger_rl_vs_ideam --save-frames false
 
 ```
+### Complete Implementation (updated on 25 Apr 2026)
+```bash
+cd C:/RiskFlow\_RL
+
+# Train BC (if not already trained)
+python -m rl.train\_bc --out rl/checkpoints/decision\_policy\_bc.pt
+
+# Train PPO v3
+python -m rl.train\_decision\_ppo \\
+  --bc-checkpoint rl/checkpoints/decision\_policy\_bc.pt \\
+  --out rl/checkpoints/decision\_policy\_ppo\_v3.pt \\
+  --total-steps 200000 --rollout-steps 2048 \\
+  --entropy-coef 0.05 --lr 1e-4 \\
+  --log-path rl/logs/decision\_ppo\_v3\_log.json
+
+# Main paper figure
+python -m rl.plot\_training\_curves \\
+  --logs rl/logs/decision\_ppo\_v3\_log.json \\
+  --labels "DREAM-RL (ours)" \\
+  --out figures/ppo\_training.pdf --diagnostic
+
+# Diagnostic breakdown (reveals the reward-dominance issue)
+python -m rl.diagnose\_reward\_drop \\
+  --logs rl/logs/decision\_ppo\_v3\_log.json \\
+  --out figures/reward\_diagnosis\_v3.pdf
+
+# Evaluation — merger scenario
+python uncertainty\_merger.py \\
+  --rl-policy-mode decision \\
+  --rl-decision-checkpoint rl/checkpoints/decision\_policy\_ppo\_v3.pt \\
+  --steps 100 --models all --save-dir figsave\_merger\_v3\_rl
+
+# Evaluation — 3-lane dense highway
+python highway\_test.py \\
+  --rl-policy-mode decision \\
+  --rl-decision-checkpoint rl/checkpoints/decision\_policy\_ppo\_v3.pt \\
+  --steps 400 --save-dir figsave\_test\_v3\_rl
+```
+
 ## Datasets used in this project (download links):
 [Ubiquitous Traffic Eyes](http://www.seutraffic.com/#/download)
 
