@@ -57,7 +57,6 @@ python -m rl.train\_decision\_ppo \\
 # Main paper figure
 python -m rl.plot\_training\_curves \\
   --logs rl/logs/decision\_ppo\_v3\_log.json \\
-  --labels "DREAM-RL (ours)" \\
   --out figures/ppo\_training.pdf --diagnostic
 
 # Diagnostic breakdown (reveals the reward-dominance issue)
