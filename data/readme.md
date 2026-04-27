@@ -1,6 +1,6 @@
 # Social-Friendliness Analysis
+(All paths below are relative to the repo root)
 
-All paths below are relative to the repo root.
 
 ## 1. Operational definition
 
@@ -173,16 +173,188 @@ to re-extract.
    python -m rl.data.historical_extractor \
        --dataset-format highD --data-dir data/highD \
        --recordings 01 --limit-tracks 50 \
-       --out-path /tmp/audit.npz
+       --out-path /tmp/audit.npz --include-social
    ```
-2. Inspect every label distribution end-to-end with one command:
+2. Inspect every label distribution end-to-end with one command each:
    ```bash
-   python -m rl.data.plot_behavior_summary \
-       --inputs /tmp/audit.npz --out figures/audit
+   python -m rl.data.plot_behavior_summary  --inputs /tmp/audit.npz  --out figures/audit_tactical
+   python -m rl.data.plot_social_externality --inputs /tmp/audit.npz  --out figures/audit_social
    ```
-3. Cross-check that `lc_advantage_frac_lc` in panel (f) lies in the
-   expected `0.05–0.30` band (printed by `summarize_dataset`); values
-   outside that band indicate a labelling drift.
+3. Cross-check that `lc_advantage_frac_lc` in Figure 1 panel (f) lies
+   in the expected `0.05–0.30` band (printed by `summarize_dataset`).
 4. Verify `Δrisk(adv=1) < Δrisk(adv=0)` in the extractor's sanity
-   report — this is the headline calibration check between the
-   advantage label and the risk proxy.
+   report — calibration check between the advantage label and the
+   risk proxy.
+5. Verify on Figure 2 panel (a) that the median rear `a_lon,min`
+   sits **above** −2 m/s² for keep samples and below it for hard
+   cut-ins — this is the headline cut-in-burden check.
+
+---
+
+## 10. Schema v4 additions (this revision)
+
+### 10.1 Courtesy / disturbance features
+
+For each ego-frame, the extractor identifies the **target-lane rear
+neighbour** — the vehicle that becomes ego's follower after the
+maneuver — and pulls its trajectory over the outcome horizon.  All
+helpers live in [`social_features.py`](social_features.py).
+
+| Key                          | Definition                                                     | Threshold   |
+| ---------------------------- | -------------------------------------------------------------- | ----------- |
+| `rear_decel_peak_3s`         | Min lon. acceleration of target-lane rear over 3 s             | continuous  |
+| `rear_ttc_now/_after`        | TTC at i and i+H using *closing* speed (NaN if not closing)    | continuous  |
+| `rear_ttc_delta`             | `rear_ttc_after − rear_ttc_now`                                | continuous  |
+| `rear_thw_now/_after/_delta` | Same shape for time-headway (uses follower speed)              | continuous  |
+| `hard_brake_imposed_flag`    | 1 iff `rear_decel_peak_3s ≤ −3.0 m/s²`                         | `−3.0 m/s²` |
+| `bad_cut_in_flag`            | 1 iff `rear_ttc_after < 2.5 s` OR `rear_ttc` lost > 30 %       | `2.5 s, 30%`|
+
+The target slot is `rear_same` for keep, `rear_left` for `lane_delta=+1`,
+`rear_right` for `lane_delta=−1` — matching the `LANE_DELTAS` convention
+in `rl/policy/decision_policy.py`.
+
+### 10.2 Decision-quality flags
+
+| Key                       | Definition                                                                    |
+| ------------------------- | ----------------------------------------------------------------------------- |
+| `missed_opportunity_flag` | `lane_delta_label==0` ∧ `blocked_by_leader_flag==1` ∧ `best_adv > 0.6`        |
+| `bad_lane_change_flag`    | `lane_delta_label≠0` ∧ `best_adv < −0.3`                                      |
+
+Track-level features (oscillation, hesitation, commitment) are *not*
+emitted per-frame — they are computed on demand by the per-agent
+plotting path so the npz stays compact.
+
+### 10.3 BEV risk-field externality metrics
+
+`RiskFieldQuery` samples a `50×20` grid (`±15 m × ±10 m`, ego-rotated)
+at 1 m resolution.  Default mode is `analytic` (the same DRIFT-shape
+proxy used in v3).  Two override modes are stubbed:
+
+* `mode='pinn'` — pass a callable matching
+  `pinn_risk_field.FieldInterpolator.query(x_np, y_np, t_np)`;
+* `mode='drift'` — pass a callable returning `R(x, y)` for one query
+  point (e.g. wrapping a precomputed PDE snapshot bundle).
+
+Reductions emitted per frame:
+
+| Key                  | Formula                                                                          |
+| -------------------- | -------------------------------------------------------------------------------- |
+| `risk_mass_total`    | `Σ R · dx · dy`                                                                  |
+| `risk_mass_others`   | `Σ_n  Σ_grid R(x,y) · exp(−‖(x,y)−p_n‖² / 2σ²) · dx · dy`                       |
+| `risk_gradient_peak` | `max ‖∇R‖` (central-difference gradient)                                         |
+| `risk_flux_backward` | `Σ_n Σ_grid R(x,y) · max(0, −closing_n) · 𝟙{p_n,x<0}`                          |
+| `risk_field_entropy` | `−Σ p log p` with `p = R / ΣR`                                                  |
+
+`risk_flux_backward` is the surrogate for the expert's
+"backward-propagating braking pressure" — high values flag that the
+ego's neighbourhood is dumping risk *behind* it, the signature of a
+shockwave starting.
+
+### 10.4 Composite scores and 5-class label
+
+Constants exposed at module level so reward and analysis stay synced:
+
+```
+W_SAFETY = 0.40   W_PROGRESS = 0.30   W_COURTESY = 0.30
+W_HESITATE = 0.10  W_AGGRESS = 0.10
+```
+
+```text
+safety   = 1 − clip(max(0, future_risk_change)/0.6
+                    + 0.6·near_miss + 1.0·collision)
+progress = clip(max(0, future_speed_gain)/5.0 + 0.5·escape − 0.5·missed_opp)
+courtesy = 1 − clip(max(0,−rear_decel_peak)/6.0
+                    + max(0,−rear_ttc_delta)/4.0
+                    + 0.5·hard_brake_imposed + 0.5·bad_cut_in)
+
+social_friendliness_score =
+    W_SAFETY · safety + W_PROGRESS · progress + W_COURTESY · courtesy
+    − W_HESITATE · missed_opp − W_AGGRESS · bad_lane_change
+```
+
+`social_class ∈ {0..4}` — `good / defensive / aggressive / passive /
+harmful` per the legend in `social_features.SOCIAL_CLASS_NAMES`.  The
+class threshold logic prefers **harmful** whenever any of:
+collision, hard-brake, bad-cut-in is true, OR safety/courtesy drop
+below 0.20.  `aggressive` is only assigned when `bad_lane_change_flag`
+is set or when progress is high while safety is low — the policy of
+preferring `aggressive` over `harmful` is intentional so a single
+near-miss doesn't dominate the label.
+
+### 10.5 New plotting figure (Figure 2)
+
+`plot_social_externality.py` emits a 3 × 2 layout:
+
+| Panel | Reads                                                                       |
+| ----- | --------------------------------------------------------------------------- |
+| (a)   | `rear_decel_peak_3s` violins by lane action; `−3 m/s²` reference line      |
+| (b)   | `hard_brake_imposed_flag`, `bad_cut_in_flag`, `rear_ttc_delta<0`, `rear_thw_delta<0` |
+| (c)   | `missed_opportunity_flag`, `bad_lane_change_flag`, `lc_advantage \| LC`, `escape \| blocked` |
+| (d)   | scatter of `risk_mass_others` vs `risk_gradient_peak`, coloured by `social_class`     |
+| (e)   | bar of the 5-class breakdown                                                |
+| (f)   | Pareto: `progress_score` × `courtesy_score`, colour = `safety_score`        |
+
+Panels (a) and (d) are the most directly responsive to reward redesign:
+
+* (a) shows whether the *ego's lane action* drives others to brake.
+  A socially-friendly population stays above the `−2 m/s²` line for
+  keep and only briefly dips below for justified merges.
+* (d) shows the joint distribution of "how much risk you create around
+  others" and "how peaked it is".  The bottom-left corner is
+  cooperative driving; the upper-right corner is harmful.
+
+### 10.6 Per-agent (case-study) workflow
+
+Both figures accept `--ego-id <int>`:
+
+```bash
+# Figure 1 — tactical, one ego only
+python -m rl.data.plot_behavior_summary \
+    --inputs rl/checkpoints/bc_v4_smoke.npz \
+    --ego-id 27 --out figures/tactical_ego27
+
+# Figure 2 — externality, one ego only
+python -m rl.data.plot_social_externality \
+    --inputs rl/checkpoints/bc_v4_smoke.npz \
+    --ego-id 27 --out figures/social_ego27
+
+# Discover candidate ids first:
+python -m rl.data.plot_social_externality \
+    --inputs rl/checkpoints/bc_v4_smoke.npz --list-egos
+```
+
+Aggregate vs per-agent results are not interchangeable — aggregate
+mean of `social_friendliness_score` is biased toward the most-sample
+egos (long tracks).  For the paper, report both.
+
+---
+
+## 11. Re-extraction commands
+
+Bumping to v4 invalidates every existing `.npz` in `rl/checkpoints/`.
+Recommended order, fastest dataset first:
+
+```bash
+# highD smoke (one recording, capped tracks): ~80 s
+python -m rl.data.historical_extractor \
+    --dataset-format highD --data-dir data/highD --recordings 01 \
+    --limit-tracks 50 --include-social \
+    --out-path rl/checkpoints/bc_v4_smoke.npz --no-manifest
+
+# highD full: ~1-2 hours
+python -m rl.data.historical_extractor \
+    --dataset-format highD --data-dir data/highD --recordings all \
+    --include-social --out-path rl/checkpoints/bc_highd_v4.npz
+
+# exiD full (richest interaction data): ~1 hour
+python -m rl.data.historical_extractor \
+    --dataset-format exiD --data-dir data/exiD --recordings all \
+    --include-social --out-path rl/checkpoints/bc_exid_v4.npz
+
+# Special datasets (SQM-N-4, YTDJ-3, XAM-N-5, XAM-N-6) — see
+# rl/data/historical_extractor.py for caveats; recommend extracting
+# with --limit-tracks first to estimate wall-time.
+```
+
+The `bc_*_v4.npz` files are roughly 1.4 × the size of the v3 files
+because of the 21 new keys.
