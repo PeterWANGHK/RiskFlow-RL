@@ -59,11 +59,6 @@ python -m rl.plot\_training\_curves \\
   --logs rl/logs/decision\_ppo\_v3\_log.json \\
   --out figures/ppo\_training.pdf --diagnostic
 
-# Diagnostic breakdown (reveals the reward-dominance issue)
-python -m rl.diagnose\_reward\_drop \\
-  --logs rl/logs/decision\_ppo\_v3\_log.json \\
-  --out figures/reward\_diagnosis\_v3.pdf
-
 # Evaluation — merger scenario
 python uncertainty\_merger.py \\
   --rl-policy-mode decision \\
