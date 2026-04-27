@@ -1,9 +1,6 @@
 # Social-Friendliness Analysis
 
-A concise technical recap of how the dataset-extraction package quantifies
-*tactically socially-friendly* human driving — what the labels actually
-measure, the thresholds that govern them, and the panels the visualiser
-emits.  All paths below are relative to the repo root.
+All paths below are relative to the repo root.
 
 ## 1. Operational definition
 
