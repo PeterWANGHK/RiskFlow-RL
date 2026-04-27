@@ -1,4 +1,4 @@
-# Social-Friendliness Analysis in `rl/data/`
+# Social-Friendliness Analysis
 
 A concise technical recap of how the dataset-extraction package quantifies
 *tactically socially-friendly* human driving — what the labels actually
