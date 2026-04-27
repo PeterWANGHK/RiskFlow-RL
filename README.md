@@ -1,8 +1,9 @@
 # RiskFlow-RL
-### (Notes: This repo is under construction, the current package didn't support 100% reproductivity yet. Please stay tuned)
-Physics-Informed Field Propagation and Reinforcement Learning for Socially-Aware Autonomous Driving
 
-### proposed framework:
+### Physics-Informed Field Propagation and Reinforcement Learning for Socially-Aware Autonomous Driving
+### (Notes: This repo is under construction, the current package didn't support 100% reproductivity yet. Please stay tuned)
+
+
 ![Methodology graph](assests/RiskFlow-RL.png)
 
 
