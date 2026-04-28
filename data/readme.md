@@ -355,6 +355,21 @@ python -m rl.data.historical_extractor \
 # rl/data/historical_extractor.py for caveats; recommend extracting
 # with --limit-tracks first to estimate wall-time.
 ```
+### sample analysis result:
+# highway-v0 Summary Table
 
-The `bc_*_v4.npz` files are roughly 1.4 × the size of the v3 files
-because of the 21 new keys.
+| metric | better | stock-ppo | IDM/MOBIL |
+|---|---|---|---|
+| Return | higher | 30.255 | 30.126 |
+| Collision Rate | lower | 0.000 | 0.000 |
+| TTC Min | higher | 1.043 | 3.398 |
+| Criticality Rate | lower | 0.139 | 0.123 |
+| Min Spacing | higher | 3.196 | 3.465 |
+| Mean Speed | higher | 21.316 | 21.661 |
+| Mean |Jerk| | lower | 0.789 | 0.080 |
+| Final Progress | higher | 854.220 | 868.308 |
+| Imposed Risk Potential | lower | 54.048 | 53.860 |
+| Backward Risk Flux | lower | 0.006 | 0.000 |
+| Safety Score | higher | 0.632 | 0.741 |
+| Courtesy Score | higher | 0.996 | 1.000 |
+| Social-Friendliness Score | higher | 0.586 | 0.599 |
