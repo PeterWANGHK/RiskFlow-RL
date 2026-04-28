@@ -1,5 +1,3 @@
-# DREAM Social-Friendliness Pipeline
-
 **End-to-end: dataset extraction → behaviour analysis → social-friendliness scoring → RL training in the simulator.**
 
 This document is the architectural map for the v5 system.  Read it
