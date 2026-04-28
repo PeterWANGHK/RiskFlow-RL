@@ -317,7 +317,7 @@ data/<format> → │ extractor v5 │ → bc_<ds>_v5.npz
               │ train_decision_ppo │ ←──│ DRIFT simulator    │
               │  (reward = task    │    │ (rl/env/...)       │
               │   + courtesy + ext │    │ exposes RiskField  │
-              │   + STEI; CBF      │    │ live              │
+              │   + STEI; CBF      │    │ live               │
               │   constraints)     │    └────────────────────┘
               └────────┬───────────┘
                        ▼
