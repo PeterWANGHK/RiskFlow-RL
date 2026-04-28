@@ -356,20 +356,19 @@ python -m rl.data.historical_extractor \
 # with --limit-tracks first to estimate wall-time.
 ```
 ### sample analysis result:
-# highway-v0 Summary Table
 
-| metric | better | stock-ppo | IDM/MOBIL |
-|---|---|---|---|
-| Return | higher | 30.255 | 30.126 |
-| Collision Rate | lower | 0.000 | 0.000 |
-| TTC Min | higher | 1.043 | 3.398 |
-| Criticality Rate | lower | 0.139 | 0.123 |
-| Min Spacing | higher | 3.196 | 3.465 |
-| Mean Speed | higher | 21.316 | 21.661 |
-| Mean |Jerk| | lower | 0.789 | 0.080 |
-| Final Progress | higher | 854.220 | 868.308 |
-| Imposed Risk Potential | lower | 54.048 | 53.860 |
-| Backward Risk Flux | lower | 0.006 | 0.000 |
-| Safety Score | higher | 0.632 | 0.741 |
-| Courtesy Score | higher | 0.996 | 1.000 |
-| Social-Friendliness Score | higher | 0.586 | 0.599 |
+| metric | better | our-rl | stock-ppo | stock-dqn | IDM/MOBIL |
+|---|---|---|---|---|---|
+| Return | higher | 0.917 | 31.090 | 8.973 | 30.393 |
+| Collision Rate | lower | 1.000 | 0.000 | 1.000 | 0.000 |
+| TTC Min | higher | 0.010 | 0.860 | 0.000 | 2.200 |
+| Criticality Rate | lower | 1.000 | 0.150 | 0.455 | 0.075 |
+| Min Spacing | higher | 0.068 | 2.367 | 0.000 | 3.546 |
+| Mean Speed | higher | 23.442 | 21.647 | 25.113 | 20.993 |
+| Mean |Jerk| | lower | 22.517 | 1.178 | 2.167 | 0.039 |
+| Final Progress | higher | 50.463 | 867.575 | 281.395 | 841.551 |
+| Imposed Risk Potential | lower | 189.192 | 92.853 | 378.307 | 15.687 |
+| Backward Risk Flux | lower | 0.000 | 0.000 | 24.083 | 0.000 |
+| Safety Score | higher | 0.000 | 0.535 | 0.390 | 0.644 |
+| Courtesy Score | higher | 1.000 | 1.000 | 1.000 | 1.000 |
+| Social-Friendliness Score | higher | 0.298 | 0.570 | 0.410 | 0.559 |
