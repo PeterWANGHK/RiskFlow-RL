@@ -355,20 +355,4 @@ python -m rl.data.historical_extractor \
 # rl/data/historical_extractor.py for caveats; recommend extracting
 # with --limit-tracks first to estimate wall-time.
 ```
-### sample analysis result:
 
-| metric | better | our-rl | stock-ppo | stock-dqn | IDM/MOBIL |
-|---|---|---|---|---|---|
-| Return | higher | 0.917 | 31.090 | 8.973 | 30.393 |
-| Collision Rate | lower | 1.000 | 0.000 | 1.000 | 0.000 |
-| TTC Min | higher | 0.010 | 0.860 | 0.000 | 2.200 |
-| Criticality Rate | lower | 1.000 | 0.150 | 0.455 | 0.075 |
-| Min Spacing | higher | 0.068 | 2.367 | 0.000 | 3.546 |
-| Mean Speed | higher | 23.442 | 21.647 | 25.113 | 20.993 |
-| Mean |Jerk| | lower | 22.517 | 1.178 | 2.167 | 0.039 |
-| Final Progress | higher | 50.463 | 867.575 | 281.395 | 841.551 |
-| Imposed Risk Potential | lower | 189.192 | 92.853 | 378.307 | 15.687 |
-| Backward Risk Flux | lower | 0.000 | 0.000 | 24.083 | 0.000 |
-| Safety Score | higher | 0.000 | 0.535 | 0.390 | 0.644 |
-| Courtesy Score | higher | 1.000 | 1.000 | 1.000 | 1.000 |
-| Social-Friendliness Score | higher | 0.298 | 0.570 | 0.410 | 0.559 |
