@@ -1,124 +1,230 @@
-# RL Debug — Current Pipeline (Actual Implementation)
+he recommended social-RL path is:
 
-> Evidence-based audit produced 2026-04-13.
-> Source files: `rl/env/dream_env_pinn.py`, `rl/risk/pinn_adapter.py`,
-> `rl/reward/reward_fn.py`, `rl/train.py`, `rl/safety/cbf_filter.py`.
+1. train on `highway-fast-v0`
+2. evaluate on `highway-v0` and `merge-v0`
+3. optionally train/evaluate on `roundabout-v0`
 
----
+## 1. Train Our Social-RL on HighwayEnv
 
-## Full Runtime Flow
+### PPO: highway-fast-v0 -> highway-v0 + merge-v0
 
-```
-Step t
-  │
-  ├─ IDM.update()        — 9 surrounding vehicles advance by dt=0.1s
-  │
-  ├─ KinematicModel      — ego bicycle model state:
-  │                         (ego_x, ego_y, ego_v, ego_yaw)
-  │
-  ├─ _build_obs()        ─────────────────────────────────────────────┐
-  │     │                                                              │
-  │     ├─ pde_solver.compute_total_Q(vehicles, ego, X, Y)            │
-  │     │     → Q_grid (ny×nx)  [highway range: 0–10 vs train: 0–162]│
-  │     ├─ pde_solver.compute_velocity_field(...)                      │
-  │     │     → vx_grid, vy_grid                                       │
-  │     ├─ pde_solver.compute_diffusion_field(...)                     │
-  │     │     → D_grid  [highway: constant 0.3 = training minimum]    │
-  │     │                                                              │
-  │     ├─ pinn._adapter.query_risk_features(                         │
-  │     │     ..., N_agents=9, ...)    ← BUG: N_agents not a param   │
-  │     │     → TypeError caught silently → _pinn_features = {}       │
-  │     │     → obs[12:19] = 0.0 (always)                             │
-  │     │                                                              │
-  │     └─ obs = 22-D vector (float32)                                │
-  │           slots 0–11:  vehicle kinematics  (working correctly)    │
-  │           slots 12–19: PINN risk features  (always ZERO)         │
-  │           slot  20:    in_merge flag                               │
-  │           slot  21:    cbf_active flag                             │
-  │                                                                    └──
-  ├─ PPO policy forward pass
-  │     → (a_raw, δ_raw) = mean of Gaussian  [deterministic at eval]
-  │
-  ├─ CBFSafetyFilter.project(a_raw, δ_raw, ...)
-  │     → (a_safe, δ_safe)  [clips action when gap or boundary CBF violated]
-  │     → cbf_active ∈ {0, 1}
-  │
-  ├─ KinematicModel.update_state(a_safe, δ_safe)
-  │     → new (ego_x, ego_y, ego_v, ego_yaw)
-  │
-  ├─ compute_reward(...)
-  │     → r_progress, r_speed, r_comfort, r_lane, r_near_miss
-  │
-  ├─ _compute_pinn_cost()
-  │     → (r_ego + r_20m) / 10  but _pinn_features = {} → cost = 0.0 (always)
-  │
-  ├─ total_reward = reward - 0.5 * 0.0 = reward   [risk term is always zero]
-  │
-  └─ PPO rollout buffer ← (obs, a_raw, log_prob, reward, value, done)
-         ↓
-         (after 2048 steps)
-         GAE advantage estimation
-         PPO clipped surrogate update
+```powershell
+python -m rl.train_highwayenv_social_sb3 `
+  --algo ppo `
+  --env-id highway-fast-v0 `
+  --eval-env-id highway-v0 merge-v0 `
+  --reward-config rl/config/social_reward_v1.json `
+  --ablation A5 `
+  --traffic-preset medium `
+  --total-steps 20000 `
+  --eval-freq 2000 `
+  --eval-episodes 5 `
+  --n-envs 4 `
+  --run-dir rl/logs/social_ppo_a5
 ```
 
----
+### DQN: highway-fast-v0 -> highway-v0 + merge-v0
 
-## What is NOT happening
-
-| Expected | Actual |
-|----------|--------|
-| PINN queried every step | PINN call raises TypeError, caught silently → always skipped |
-| obs[12–19] carry risk gradient | obs[12–19] = [0, 0, 0, 0, 0, 0, 0, 0] every step |
-| PPO learns risk-avoidance | PPO receives zero risk signal; learns only from progress + terminals |
-| c_pinn modulates reward | c_pinn = 0.0 for all 300,000 training steps |
-| Temporal risk propagation used | t normalises to −1.0 (extreme of training range); temporal info absent |
-
----
-
-## PINN Loading vs PINN Execution
-
-The PINN checkpoint **loads successfully** — architecture is inferred from the state dict,
-weights are loaded, and forward passes can be called manually (as shown in the probe).
-The failure is at the **call site** in `_build_obs()`.
-
-The call in `rl/env/dream_env_pinn.py` (line ~716):
-```python
-feat = self._pinn.query_risk_features(
-    ego_x=ego_x, ego_y=ego_y,
-    t=self._sim_t,
-    Q_grid=Q_total, vx_grid=vx_g, vy_grid=vy_g, D_grid=D_g,
-    sim_cfg=_cfg,
-    N_agents=9,           # ← not a parameter of query_risk_features
-    lane_centers=cfg.LANE_CENTERS,
-    current_lane=curr_lane,
-)
+```powershell
+python -m rl.train_highwayenv_social_sb3 `
+  --algo dqn `
+  --env-id highway-fast-v0 `
+  --eval-env-id highway-v0 merge-v0 `
+  --reward-config rl/config/social_reward_v1.json `
+  --ablation A5 `
+  --traffic-preset medium `
+  --total-steps 20000 `
+  --eval-freq 2000 `
+  --eval-episodes 5 `
+  --run-dir rl/logs/social_dqn_a5
 ```
 
-`query_risk_features` signature has no `N_agents` parameter.
-Python raises `TypeError: got an unexpected keyword argument 'N_agents'`.
-The surrounding `except Exception: pass` block absorbs it silently.
-`_pinn_features` stays `{}` and risk obs stays 0.
+## 2. Evaluate Our Social-RL
 
----
+### Evaluate the best checkpoint
 
-## Evidence
-
-From diagnostic probe `docs/rl_diagnostics_probe.py`:
-
-```
-obs slots 12-21 (PINN risk + context): [0. 0. 0. 0. 0. 0. 0. 0. 1. 0.]
-PINN features at reset: {}
-```
-
-From training log (`rl/logs/train_log.csv`, all 13305 episodes):
-```
-ep_cost = 0.0  (every single episode from step 1 to step 301044)
+```powershell
+python -m rl.eval_highwayenv_social_sb3 `
+  --algo ppo `
+  --checkpoint rl/logs/social_ppo_a5/checkpoints/best_model.zip `
+  --env-id highway-v0 merge-v0 `
+  --reward-config rl/config/social_reward_v1.json `
+  --ablation A5 `
+  --episodes 20 `
+  --use-drift true `
+  --traffic-preset medium `
+  --out rl/logs/social_ppo_a5/eval_best_20ep.json
 ```
 
-From manual PINN probe (calling correctly, without N_agents):
+### Evaluate the final checkpoint
+
+```powershell
+python -m rl.eval_highwayenv_social_sb3 `
+  --algo ppo `
+  --checkpoint rl/logs/social_ppo_a5/checkpoints/final_model.zip `
+  --env-id highway-v0 merge-v0 `
+  --reward-config rl/config/social_reward_v1.json `
+  --ablation A5 `
+  --episodes 20 `
+  --use-drift true `
+  --traffic-preset medium `
+  --out rl/logs/social_ppo_a5/eval_final_20ep.json
 ```
-r_ego=0.228461  r_5m=0.228457  r_10m=0.228457  r_20m=0.228458
-grad_x=0.0  grad_y=-0.000046
-r_left=0.228621  r_right=0.228298
+
+### Drift-ablation check on the same policy
+
+```powershell
+python -m rl.eval_highwayenv_social_sb3 `
+  --algo ppo `
+  --checkpoint rl/logs/social_ppo_a5/checkpoints/best_model.zip `
+  --env-id highway-v0 merge-v0 `
+  --reward-config rl/config/social_reward_v1.json `
+  --ablation A5 `
+  --episodes 20 `
+  --use-drift false `
+  --traffic-preset medium `
+  --out rl/logs/social_ppo_a5/eval_best_20ep_nodrift.json
 ```
-The PINN does produce output — but the output is flat (all values ≈ 0.228).
+
+## 3. Plot Training Curves
+
+```powershell
+python -m rl.plot_highwayenv_social_training --run-dir rl/logs/social_ppo_a5
+```
+
+This writes SciencePlots figures next to the run:
+
+- `learning_curves.png/.pdf`
+- `reward_components.png/.pdf`
+- `safety_courtesy.png/.pdf`
+- `final_eval_bars.png/.pdf`
+
+The plotter supports both the standard `highway-v0` / `merge-v0` setup and single-env runs such as `roundabout-v0`.
+
+## 4. Train Our Social-RL on Roundabout
+
+### PPO: roundabout-v0
+
+```powershell
+python -m rl.train_highwayenv_social_sb3 `
+  --algo ppo `
+  --env-id roundabout-v0 `
+  --eval-env-id roundabout-v0 `
+  --reward-config rl/config/social_reward_v1.json `
+  --ablation A5 `
+  --traffic-preset medium `
+  --duration 20 `
+  --total-steps 20000 `
+  --eval-freq 2000 `
+  --eval-episodes 5 `
+  --n-envs 4 `
+  --run-dir rl/logs/social_ppo_a5_roundabout
+```
+
+### Evaluate the roundabout policy
+
+```powershell
+python -m rl.eval_highwayenv_social_sb3 `
+  --algo ppo `
+  --checkpoint rl/logs/social_ppo_a5_roundabout/checkpoints/best_model.zip `
+  --env-id roundabout-v0 `
+  --reward-config rl/config/social_reward_v1.json `
+  --ablation A5 `
+  --episodes 20 `
+  --use-drift true `
+  --traffic-preset medium `
+  --duration 20 `
+  --out rl/logs/social_ppo_a5_roundabout/eval_best_20ep.json
+```
+
+### Plot the roundabout training curves
+
+```powershell
+python -m rl.plot_highwayenv_social_training --run-dir rl/logs/social_ppo_a5_roundabout
+```
+
+## 5. Train Stock Baselines First, Then Evaluate With Social Metrics
+
+### Stock PPO vs IDM/MOBIL on roundabout-v0
+
+This trains a stock PPO baseline if the checkpoint is missing, then evaluates it with the online social/risk metric suite.
+
+```powershell
+python -m rl.compare_stock_policy_vs_idm_social `
+  --algo ppo `
+  --checkpoint rl/checkpoints/sb3_roundabout_ppo `
+  --train-env-id roundabout-v0 `
+  --eval-env-id roundabout-v0 `
+  --train-if-missing true `
+  --train-steps 20000 `
+  --episodes 20 `
+  --duration 20 `
+  --n-envs 4 `
+  --save-dir rl/logs/roundabout_stock_ppo_vs_idm_social
+```
+
+### Stock DQN vs IDM/MOBIL on roundabout-v0
+
+```powershell
+python -m rl.compare_stock_policy_vs_idm_social `
+  --algo dqn `
+  --checkpoint rl/checkpoints/sb3_roundabout_dqn `
+  --train-env-id roundabout-v0 `
+  --eval-env-id roundabout-v0 `
+  --train-if-missing true `
+  --train-steps 20000 `
+  --episodes 20 `
+  --duration 20 `
+  --save-dir rl/logs/roundabout_stock_dqn_vs_idm_social
+```
+
+The output folders include:
+
+- `summary.json`
+- `summary.md`
+- `summary_table.csv`
+- `summary_table.md`
+- `metrics_summary.png`
+- `social_metrics_summary.png`
+
+## 6. Save Side-by-Side Animation Frames
+
+### Stock PPO vs IDM/MOBIL
+
+```powershell
+python -m rl.compare_sb3_highway_ppo_vs_idm `
+  --ppo-checkpoint rl/logs/roundabout_stock_curve_compare/ppo_highway_v0 `
+  --eval-env-id roundabout-v0 `
+  --episodes 10 `
+  --duration 20 `
+  --save-dir rl/logs/roundabout_stock_ppo_vs_idm_anim `
+  --ppo-label stock-ppo `
+  --baseline-label IDM/MOBIL `
+  --save-frames true `
+  --frame-seed 0
+```
+
+### Stock PPO vs IDM/MOBIL with DRIFT field overlay
+
+```powershell
+python -m rl.compare_sb3_highway_ppo_vs_idm `
+  --ppo-checkpoint rl/logs/roundabout_stock_curve_compare/ppo_highway_v0 `
+  --eval-env-id roundabout-v0 `
+  --episodes 10 `
+  --duration 20 `
+  --save-dir rl/logs/roundabout_stock_ppo_vs_idm_anim_risk `
+  --ppo-label stock-ppo `
+  --baseline-label IDM/MOBIL `
+  --save-frames-with-risk true `
+  --frame-seed 0 `
+  --drift-warmup-s 1.0
+```
+
+This writes `frames/step_0000.png`, `step_0001.png`, ... plus summary plots.
+
+## 7. Notes on Roundabout vs Highway
+
+- `roundabout-v0` is more scripted than `highway-v0` or `highway-fast-v0`.
+- `duration` is important for roundabout runs.
+- `vehicles_count` and `vehicles_density` matter less on `roundabout-v0`, because the native scenario hardcodes several spawned vehicles.
+- `sv_speed_min`, `sv_speed_max`, and `sv_speed_noise` still affect the surrounding-vehicle initialization through the project traffic wrapper.
