@@ -1,4 +1,4 @@
-he recommended social-RL path is:
+The recommended social-RL path is:
 
 1. train on `highway-fast-v0`
 2. evaluate on `highway-v0` and `merge-v0`
