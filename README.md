@@ -3,6 +3,7 @@
 ### Physics-Informed Field Propagation and Reinforcement Learning for Socially-Aware Autonomous Driving
 ### (Notes: This repo is under construction, the current package doesn't support 100% reproductivity yet. Please stay tuned)
 
+Relevant preliminmary model used could be found at [DRIFT](https://github.com/PeterWANGHK/DRIFT.git)
 
 ![Methodology graph](assests/RiskFlow-RL.png)
 
