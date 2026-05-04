@@ -1,7 +1,7 @@
 # RIPPLE
 ## Risk-Informed Physics-Based Policy Learning for Externality-Aware Driving
 
-### (Notes: This repo is under construction, the current package doesn't support 100% reproductivity yet. Please stay tuned)
+### This repo is for HKU IDS RPG programme DATA8007 Project Submission
 
 Relevant preliminmary model used could be found at [DRIFT](https://github.com/PeterWANGHK/DRIFT.git)
 
