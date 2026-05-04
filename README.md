@@ -80,7 +80,7 @@ python highway\_test.py \\
 
 [leveLXData](https://levelxdata.com/)
 
-### sample result:
+## Example statistical results:
 The following table includes the performance between the standard PPO and baseline IDM/MOBIL model:
 
 | metric | better | stock-ppo | IDM/MOBIL |
@@ -112,6 +112,6 @@ The following table includes the performance between the standard PPO and baseli
 | Courtesy Score | higher | 1.000 | 1.000 |
 | Social-Friendliness Score | higher | 0.608 | 0.421 |
 
-### example snapshot of agent performance
+## Example snapshots of agent performances
 Comparing the Social-friendly and risk-aware RL agent with the baseline RL and IDM/MOBIL in roundabout scenario: The IDM/MOBIL leads to a collision, while the baseline RL agent leads to over-conservative behavior
 ![Result](assests/roundabout_snapshot.jpg)
