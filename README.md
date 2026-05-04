@@ -114,4 +114,4 @@ The following table includes the performance between the standard PPO and baseli
 
 ### example snapshot of agent performance
 Compare the Social-friendly and risk-aware RL agent with the baseline RL and IDM/MOBIL in roundabout scenario; The IDM/MOBIL leads to a collision, while the baseline RL agent leads to over-conservative behavior
-![Result](assests/step_0008.png)
+![Result](assests/roundabout_snapshot.jpg)
