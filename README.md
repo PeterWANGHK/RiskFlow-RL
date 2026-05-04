@@ -1,4 +1,4 @@
-# RIIPLE
+# RIPPLE
 ## Risk-Informed Physics-Based Policy Learning for Externality-Aware Driving
 
 ### (Notes: This repo is under construction, the current package doesn't support 100% reproductivity yet. Please stay tuned)
