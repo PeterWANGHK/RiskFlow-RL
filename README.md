@@ -5,7 +5,7 @@
 
 Relevant preliminmary model used could be found at [DRIFT](https://github.com/PeterWANGHK/DRIFT.git)
 
-![Methodology graph](assests/RiskFlow-RL.png)
+![Methodology graph](assests/methodology_8007.jpg)
 
 
 ### PINN training
