@@ -113,5 +113,5 @@ The following table includes the performance between the standard PPO and baseli
 | Social-Friendliness Score | higher | 0.608 | 0.421 |
 
 ### example snapshot of agent performance
-Compare the Social-friendly and risk-aware RL agent with the baseline RL and IDM/MOBIL in roundabout scenario; The IDM/MOBIL leads to a collision, while the baseline RL agent leads to over-conservative behavior
+Comparing the Social-friendly and risk-aware RL agent with the baseline RL and IDM/MOBIL in roundabout scenario: The IDM/MOBIL leads to a collision, while the baseline RL agent leads to over-conservative behavior
 ![Result](assests/roundabout_snapshot.jpg)
